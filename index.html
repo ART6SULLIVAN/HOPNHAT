@@ -3,78 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOPNHAT CONSULTING FIRM</title>
+    <title>HOPNHAT CONSULTING FIRM - Giải Pháp AI & Kế Toán</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-30 text-slate-800">
+<body class="bg-slate-50 text-slate-800">
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <span class="text-2xl font-bold text-blue-600">Germini</span>
-                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">AI & Quản Trị</span>
+                <!-- Đã thay đổi theo yêu cầu -->
+                <span class="text-xl font-bold text-blue-600">HOPNHAT CONSULTING FIRM</span>
             </div>
             <nav class="hidden md:flex space-x-6 text-sm font-medium">
-                <a href="#" class="text-blue-600">Tin Tức AI</a>
-                <a href="#" class="hover:text-blue-600">Tự Động Hóa Kế Toán</a>
-                <a href="#" class="hover:text-blue-600">Quản Trị Tinh Gọn</a>
+                <a href="index.html" class="text-blue-600">Tin Tức</a>
+                <a href="#tu-dong-hoa" class="hover:text-blue-600">Tự Động Hóa Kế Toán</a>
+                <a href="#quan-tri" class="hover:text-blue-600">Quản Trị Tinh Gọn</a>
             </nav>
             <div>
                 <a href="./intranet/" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">
-                    Đăng Nhập
+                    Đăng Nhập Nội Bộ
                 </a>
             </div>
         </div>
     </header>
 
-    <!-- Hero Service Section -->
+    <!-- Hero Section (Đã bỏ dòng tên cũ, thay bằng nội dung định hướng) -->
     <section class="bg-gradient-to-r from-slate-900 to-blue-900 text-white py-16">
         <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
             <div>
-                <!-- Tên thương hiệu tiếng Anh chuyên nghiệp, không lỗi font -->
-                <h1 class="text-4xl font-extrabold mb-4 leading-tight tracking-wide">HOPNHAT CONSULTING FIRM</h1>
-                <p class="text-slate-300 mb-6 font-normal">Chuyên gia giải pháp tự động hóa kế toán và tối ưu hóa quản trị doanh nghiệp siêu nhỏ bằng công nghệ AI tiên tiến.</p>
+                <h1 class="text-4xl font-extrabold mb-4 leading-tight tracking-wide">Giải Pháp AI & Tự Động Hóa Doanh Nghiệp</h1>
+                <p class="text-slate-300 mb-6 font-normal">Cập nhật xu hướng công nghệ trí tuệ nhân tạo mới nhất giúp các doanh nghiệp siêu nhỏ tiết kiệm 80% thời gian xử lý số liệu và báo cáo.</p>
                 <a href="./intranet/" class="bg-white text-blue-900 font-semibold px-6 py-3 rounded-lg shadow hover:bg-slate-100 transition inline-block">Khám Phá Khu Vực Nội Bộ</a>
             </div>
             <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
                 <div class="text-xs text-blue-400 mb-2 font-mono">⚡ AI Automation News Update</div>
                 <h3 class="text-xl font-bold mb-2">Ứng dụng Mô hình ngôn ngữ vào việc kiểm soát hóa đơn tự động</h3>
                 <p class="text-slate-400 text-sm mb-4">Làm thế nào để tích hợp AI đọc và phân loại chứng từ kế toán đầu vào một cách chính xác...</p>
-                <span class="text-xs bg-blue-900 text-blue-200 px-2 py-1 rounded">Cập nhật tự động</span>
+                <a href="post-detail.html?id=1" class="text-xs text-blue-400 hover:underline font-semibold">Đọc chi tiết &rarr;</a>
             </div>
         </div>
     </section>
 
-    <!-- Danh sách bài viết tin tức -->
-    <main class="max-w-7xl mx-auto px-4 py-12">
-        <h2 class="text-2xl font-bold mb-8 border-l-4 border-blue-600 pl-3">Bài Viết & Xu Hướng Mới Nhất</h2>
-        <div class="grid md:grid-cols-3 gap-6">
-            <!-- Bài viết mẫu 1 -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
-                <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Tự Động Hóa</span>
-                <h3 class="text-lg font-bold mt-2 mb-3">AI Giúp Tự Động Hóa Báo Cáo Tài Chính Như Thế Nào?</h3>
-                <p class="text-slate-600 text-sm mb-4">Khám phá cách các công cụ AI phân tích dòng tiền và hỗ trợ lập báo cáo thuế nhanh chóng...</p>
-                <div class="text-xs text-slate-400">Nguồn: Tự động tổng hợp • Hôm nay</div>
+    <!-- Danh sách bài viết tin tức với các chuyên mục đã viết hoa -->
+    <main class="max-w-7xl mx-auto px-4 py-12 space-y-12">
+        <!-- Chuyên mục 1: Tin Tức -->
+        <section id="tin-tuc">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-blue-600 pl-3">Tin Tức</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Tin Tức AI</span>
+                        <h3 class="text-lg font-bold mt-2 mb-3">AI Giúp Tự Động Hóa Báo Cáo Tài Chính Như Thế Nào?</h3>
+                        <p class="text-slate-600 text-sm mb-4">Khám phá cách các công cụ AI phân tích dòng tiền và hỗ trợ lập báo cáo thuế nhanh chóng...</p>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 mb-3">Nguồn: Tự động tổng hợp • Hôm nay</div>
+                        <a href="post-detail.html?id=2" class="text-sm font-semibold text-blue-600 hover:text-blue-800">Xem chi tiết &rarr;</a>
+                    </div>
+                </div>
             </div>
-            <!-- Bài viết mẫu 2 -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
-                <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Quản Trị</span>
-                <h3 class="text-lg font-bold mt-2 mb-3">Cách AI Tối Ưu Quản Lý Dòng Tiền Cho Doanh Nghiệp Nhỏ</h3>
-                <p class="text-slate-600 text-sm mb-4">Những giải pháp kiểm soát công nợ và dự báo tài chính hiệu quả thông qua trợ lý ảo...</p>
-                <div class="text-xs text-slate-400">Nguồn: Tự động tổng hợp • Hôm qua</div>
+        </section>
+
+        <!-- Chuyên mục 2: Tự Động Hóa Kế Toán -->
+        <section id="tu-dong-hoa">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-blue-600 pl-3">Tự Động Hóa Kế Toán</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Kế Toán Số</span>
+                        <h3 class="text-lg font-bold mt-2 mb-3">Cách AI Tối Ưu Quản Lý Dòng Tiền Cho Doanh Nghiệp Nhỏ</h3>
+                        <p class="text-slate-600 text-sm mb-4">Những giải pháp kiểm soát công nợ và dự báo tài chính hiệu quả thông qua trợ lý ảo...</p>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 mb-3">Nguồn: Tự động tổng hợp • Hôm qua</div>
+                        <a href="post-detail.html?id=3" class="text-sm font-semibold text-blue-600 hover:text-blue-800">Xem chi tiết &rarr;</a>
+                    </div>
+                </div>
             </div>
-            <!-- Bài viết mẫu 3 -->
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
-                <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Kế Toán Số</span>
-                <h3 class="text-lg font-bold mt-2 mb-3">AI trong Kế Toán: Tương Lai Của Doanh Nghiệp Siêu Nhỏ</h3>
-                <p class="text-slate-600 text-sm mb-4">Góc nhìn chiến lược cho các nhà quản lý khi chuyển đổi số quy trình kế toán nội bộ...</p>
-                <div class="text-xs text-slate-400">Nguồn: Tự động tổng hợp • 2 ngày trước</div>
+        </section>
+
+        <!-- Chuyên mục 3: Quản Trị Tinh Gọn -->
+        <section id="quan-tri">
+            <h2 class="text-2xl font-bold mb-6 border-l-4 border-blue-600 pl-3">Quản Trị Tinh Gọn</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">Quản Trị</span>
+                        <h3 class="text-lg font-bold mt-2 mb-3">AI trong Kế Toán: Tương Lai Của Doanh Nghiệp Siêu Nhỏ</h3>
+                        <p class="text-slate-600 text-sm mb-4">Góc nhìn chiến lược cho các nhà quản lý khi chuyển đổi số quy trình kế toán nội bộ...</p>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 mb-3">Nguồn: Tự động tổng hợp • 2 ngày trước</div>
+                        <a href="post-detail.html?id=4" class="text-sm font-semibold text-blue-600 hover:text-blue-800">Xem chi tiết &rarr;</a>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
     </main>
 
     <footer class="bg-white border-t border-slate-200 py-6 text-center text-sm text-slate-500">
-        &copy; 2026 Germini. Giải pháp quản trị nội bộ tự động hóa trên GitHub Pages.
+        &copy; 2026 HOPNHAT CONSULTING FIRM. All rights reserved.
     </footer>
 </body>
 </html>
