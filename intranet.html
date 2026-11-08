@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOPNHAT Nội Bộ - Quản Trị & Phân Công Công Việc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
+        <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg border border-slate-200">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-blue-600">HOPNHAT Nội Bộ</h2>
+                <p class="text-sm text-slate-500 mt-1">Cổng thông tin quản trị và nhân sự</p>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Email đăng nhập</label>
+                    <input type="email" id="email-input" required placeholder="Nhập email của bạn..." 
+                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition">
+                    Truy Cập
+                </button>
+                <p id="login-error" class="text-xs text-red-500 text-center hidden">Email này không nằm trong danh sách cấp phép!</p>
+            </form>
+            <div class="mt-4 text-xs text-slate-500 text-center bg-slate-50 p-3 rounded border">
+                🔒 Vui lòng sử dụng đúng email đã được cấp quyền.
+            </div>
+            <div class="mt-6 text-center">
+                <a href="index.html" class="text-xs text-slate-500 hover:text-blue-600">&larr; Quay lại Trang chủ</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard-app" class="hidden min-h-screen flex flex-col">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-6">
+                    <span class="text-xl font-bold text-blue-600">HOPNHAT Nội Bộ</span>
+                    <nav class="hidden md:flex space-x-4 text-sm font-medium">
+                        <a href="#quan-ly-user" id="admin-menu-link" class="text-purple-600 font-semibold hidden">Quản Lý Tài Khoản</a>
+                    </nav>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span id="user-email-display" class="text-sm font-medium text-slate-600"></span>
+                    <button onclick="handleLogout()" class="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded font-medium transition">Đăng Xuất</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-7xl mx-auto px-4 py-8 flex-1 w-full space-y-8">
+            <!-- Quản Lý User -->
+            <section id="quan-ly-user-section" class="bg-purple-50 p-6 rounded-xl border border-purple-200 shadow-sm hidden">
+                <h3 class="text-lg font-bold mb-4 text-purple-900 border-l-4 border-purple-600 pl-3">Quản Lý Tài Khoản Đăng Nhập</h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="bg-white p-4 rounded-lg border shadow-sm">
+                        <h4 class="font-semibold text-sm mb-3">Thêm tài khoản mới</h4>
+                        <form onsubmit="addUser(event)" class="space-y-3">
+                            <input type="email" id="new-email" placeholder="Nhập email nhân sự..." required class="w-full px-3 py-2 border rounded text-sm">
+                            <select id="new-role" class="w-full px-3 py-2 border rounded text-sm">
+                                <option value="staff">Nhân viên</option>
+                                <option value="admin">Quản trị viên (Admin)</option>
+                            </select>
+                            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded text-sm font-medium">Lưu Tài Khoản</button>
+                        </form>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border shadow-sm">
+                        <h4 class="font-semibold text-sm mb-3">Danh sách tài khoản:</h4>
+                        <ul id="user-list" class="text-xs space-y-2 max-h-40 overflow-y-auto"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Các phần còn lại: Bảng tin, Thư viện, Công việc -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-lg font-bold mb-4 border-l-4 border-blue-600 pl-3">Bảng Tin & Tài Liệu</h3>
+                    <p class="text-sm text-slate-600 mb-2">- <b>Lưu ý:</b> Quy trình đối soát hóa đơn áp dụng AI đã cập nhật.</p>
+                    <p class="text-sm text-slate-600 mb-2">- <b>Thư viện:</b> <a href="#" class="text-blue-500 hover:underline">Link Biểu mẫu & Hướng dẫn</a></p>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="text-lg font-bold mb-4 border-l-4 border-blue-600 pl-3">Trạng Thái Công Việc</h3>
+                    <p class="text-sm text-slate-600">🔹 <b>Đang làm:</b> Kiểm kê kho & đối soát công nợ.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Cơ chế nạp dữ liệu: Luôn đảm bảo tài khoản của anh Hiền và Nhân sự có mặt trong hệ thống
+        function initializeSystem() {
+            let currentUsers = JSON.parse(localStorage.getItem("hopnhat_users") || "[]");
+            const adminEmail = "nguyenhuuhien@gmail.com";
+            
+            // Nếu không tìm thấy email quản trị (nghĩa là đang bị lưu cache cũ), hệ thống sẽ đè danh sách mới
+            if (!currentUsers.some(u => u.email === adminEmail)) {
+                const newInitialUsers = [
+                    { email: "nguyenhuuhien@gmail.com", role: "admin" },
+                    { email: "mytuyen.hopnhat@gmail.com", role: "staff" },
+                    { email: "myphuong.hopnhat@gmail.com", role: "staff" },
+                    { email: "thuyla.hopnhat@gmail.com", role: "staff" },
+                    { email: "lthluong.hopnhat@gmail.com", role: "staff" },
+                    { email: "truc.hopnhat@gmail.com", role: "staff" }
+                ];
+                localStorage.setItem("hopnhat_users", JSON.stringify(newInitialUsers));
+            }
+        }
+
+        window.onload = function() {
+            initializeSystem();
+            const savedEmail = localStorage.getItem("hopnhat_current_user");
+            if (savedEmail) {
+                checkAndShowDashboard(savedEmail);
+            }
+        };
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById("email-input");
+            const email = emailInput.value.trim().toLowerCase();
+            const errorEl = document.getElementById("login-error");
+            
+            const users = JSON.parse(localStorage.getItem("hopnhat_users") || "[]");
+            const foundUser = users.find(u => u.email === email);
+
+            if (foundUser) {
+                localStorage.setItem("hopnhat_current_user", email);
+                checkAndShowDashboard(email);
+            } else {
+                errorEl.classList.remove("hidden");
+            }
+        }
+
+        function checkAndShowDashboard(email) {
+            const users = JSON.parse(localStorage.getItem("hopnhat_users") || "[]");
+            const foundUser = users.find(u => u.email === email);
+
+            if (!foundUser) {
+                handleLogout();
+                return;
+            }
+
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("dashboard-app").classList.remove("hidden");
+            document.getElementById("user-email-display").innerText = `Tài khoản: ${email} (${foundUser.role})`;
+
+            if (foundUser.role === 'admin') {
+                document.getElementById("admin-menu-link").classList.remove("hidden");
+                document.getElementById("quan-ly-user-section").classList.remove("hidden");
+                renderUserList();
+            }
+        }
+
+        function addUser(event) {
+            event.preventDefault();
+            const newEmail = document.getElementById("new-email").value.trim().toLowerCase();
+            const newRole = document.getElementById("new-role").value;
+
+            let users = JSON.parse(localStorage.getItem("hopnhat_users") || "[]");
+            if (users.some(u => u.email === newEmail)) {
+                alert("Email này đã tồn tại!");
+                return;
+            }
+            users.push({ email: newEmail, role: newRole });
+            localStorage.setItem("hopnhat_users", JSON.stringify(users));
+            alert("Đã thêm tài khoản!");
+            document.getElementById("new-email").value = "";
+            renderUserList();
+        }
+
+        function deleteUser(email) {
+            if (email === "nguyenhuuhien@gmail.com") {
+                alert("Không thể xóa tài khoản Quản trị gốc!");
+                return;
+            }
+            let users = JSON.parse(localStorage.getItem("hopnhat_users") || "[]");
+            users = users.filter(u => u.email !== email);
+            localStorage.setItem("hopnhat_users", JSON.stringify(users));
+            renderUserList();
+        }
+
+        function renderUserList() {
+            const users = JSON.parse(localStorage.getItem("hopnhat_users") || "[]");
+            const listEl = document.getElementById("user-list");
+            listEl.innerHTML = "";
+            users.forEach(u => {
+                const li = document.createElement("li");
+                li.className = "flex justify-between items-center bg-slate-50 p-2 rounded border";
+                li.innerHTML = `<span><b>${u.email}</b> (${u.role})</span> 
+                                ${u.email !== 'nguyenhuuhien@gmail.com' ? `<button onclick="deleteUser('${u.email}')" class="text-red-500 hover:underline">Xóa</button>` : ''}`;
+                listEl.appendChild(li);
+            });
+        }
+
+        function handleLogout() {
+            localStorage.removeItem("hopnhat_current_user");
+            location.reload();
+        }
+    </script>
+</body>
+</html>
