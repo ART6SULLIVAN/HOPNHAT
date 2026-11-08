@@ -1,0 +1,8 @@
+quan-tri-noi-bo/
+├── index.html                      # Trang chủ Công cộng (Public News)
+├── intranet/
+│   ├── index.html                  # Trang đăng nhập & Giao diện Nội bộ (Intranet)
+│   └── data.json                   # Tệp lưu trữ dữ liệu công việc & tài nguyên nội bộ
+└── .github/
+    └── workflows/
+        └── auto-news.yml           # Kịch bản GitHub Actions tự động lấy & dịch tin tức
