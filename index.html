@@ -89,39 +89,10 @@ function doLogout(){rm(K.s);S.user=null;go('home')}
 //  PAGES
 // ═══════════════════════════════════════════
 function pgHome(){
-  const pName=portalName();
-  const posts=(ls(K.p)||[]).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
-  const cards=posts.length?posts.map(p=>`
-    <div class="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
-      <div class="flex items-start gap-3 mb-3">
-        <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-none">${ic('megaphone','w-4 h-4 text-blue-600')}</div>
-        <div>
-          <div class="font-bold text-slate-900 leading-snug">${esc(p.title)}</div>
-          <div class="text-xs text-slate-400 mt-0.5">${fmtDate(p.date)}</div>
-        </div>
-      </div>
-      <p class="text-sm text-slate-600 leading-relaxed" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${esc(p.content)}</p>
-    </div>`).join('')
-    :`<div class="col-span-3 flex flex-col items-center justify-center py-20 text-slate-400 gap-3">${ic('inbox','w-12 h-12')}<p class="font-medium">Chưa có thông báo nào.</p></div>`;
-  return `<div class="min-h-screen bg-white">
-    <nav class="border-b border-slate-100 px-8 py-5 flex items-center gap-4">
-      <div>
-        <div class="text-xs text-slate-400 font-bold uppercase tracking-widest">HNS · HỢP NHẤT</div>
-        <div class="text-xl font-extrabold text-slate-900 leading-tight">${esc(pName)}</div>
-      </div>
-      <span class="flex-1"></span>
-      <button class="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-700 transition-all duration-200" data-nav="login">Đăng nhập ${ic('arrow-right','w-4 h-4')}</button>
-    </nav>
-    <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white px-8 py-20 text-center">
-      <div class="inline-flex items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest mb-6">${ic('building-2','w-3.5 h-3.5')} CỔNG LÀM VIỆC NỘI BỘ</div>
-      <h1 class="text-4xl font-black mb-4">Trung tâm làm việc</h1>
-      <p class="text-slate-400 max-w-sm mx-auto">Ứng dụng nội bộ · Thông báo công ty · Tài nguyên dùng chung</p>
-    </div>
-    <div class="max-w-5xl mx-auto px-8 py-12">
-      <h2 class="text-xl font-extrabold text-slate-900 mb-6">Thông báo mới nhất</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${cards}</div>
-    </div>
-    <footer class="border-t border-slate-100 px-8 py-6 text-center text-slate-400 text-sm">© ${new Date().getFullYear()} HNS · Hợp Nhất. Cổng làm việc nội bộ.</footer>
+  // Giao diện trang chủ tối giản tuyệt đối, toàn bộ nền là màu xanh, chữ HOPNHAT HUB
+  // Click vào bất kỳ đâu trên màn hình sẽ chuyển sang trang Đăng nhập
+  return `<div class="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex flex-col items-center justify-center cursor-pointer selection:bg-transparent" data-nav="login" title="Nhấn để đăng nhập">
+    <h1 class="text-5xl md:text-7xl font-black text-white tracking-widest text-center hover:scale-105 transition-transform duration-300">HOPNHAT HUB</h1>
   </div>`;
 }
 
@@ -148,7 +119,7 @@ function pgLogin(){
           </div>
           <button id="btn-lg" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-700 transition-all duration-200 mt-2">Đăng nhập</button>
         </div>
-        <div class="text-center mt-5"><a href="https://hopnhat.org" class="text-sm text-slate-400 hover:text-slate-600 transition">← Về trang chủ</a></div>
+        <div class="text-center mt-5"><a href="#" data-nav="home" class="text-sm text-slate-400 hover:text-slate-600 transition">← Về trang chủ</a></div>
       </div>
     </div>
   </div>`;
