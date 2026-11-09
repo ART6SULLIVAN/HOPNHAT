@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HNS – HOPNHAT HUB</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Be Vietnam Pro"','system-ui','-apple-system','sans-serif']}}}}</script>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<!-- Bổ sung font Cormorant Garamond mô phỏng 100% phong cách của maaemo.no -->
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Be Vietnam Pro"','system-ui','-apple-system','sans-serif'], maaemo:['"Cormorant Garamond"','serif']}}}}</script>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -32,6 +33,15 @@ const DEFAULT_APPS=[
   {id:'hoadon',  name:'HNS – QUẢN LÝ HÓA ĐƠN', icon:'file-text',  color:'#60a5fa', desc:'Trích xuất bảng kê hóa đơn điện tử tự động từ Tổng cục Thuế.', url:''},
   {id:'hkd',     name:'HNS – QUẢN LÝ HKD',      icon:'store',      color:'#fbbf24', desc:'Quản lý thu chi, bán hàng và hoạt động kinh doanh Hộ kinh doanh.', url:''},
   {id:'hopnhat', name:'HNS – QUẢN LÝ HỢP NHẤT', icon:'link-2',     color:'#f87171', desc:'Cổng thông tin, tin tức và tiện ích nội bộ dành cho nhân sự Hợp Nhất.', url:''},
+];
+
+// DANH SÁCH CÁC WEBSITE HAY DÙNG (Giao diện maaemo.no)
+// Anh có thể thêm/bớt các dòng bên dưới
+const QUICK_LINKS = [
+  { name: 'gift cards',       url: 'https://maaemo.no/' }, 
+  { name: 'thuế điện tử',     url: 'https://thuedientu.gdt.gov.vn/' },
+  { name: 'hóa đơn điện tử',  url: 'https://hoadondientu.gdt.gov.vn/' },
+  { name: 'misa sme',         url: 'https://sme.misa.vn/' },
 ];
 
 const INIT_USERS=[
@@ -68,6 +78,7 @@ function getAPPS(){
   return apps;
 }
 
+const portalName=()=>(ls(K.cfg)||{}).name||'HOPNHAT HUB';
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const $=id=>document.getElementById(id);
 const canPost=u=>u&&u.username===OWNER;
@@ -333,7 +344,6 @@ function pgAdminPosts(){
 
 function pgAdminApps(){
   const APPS=getAPPS();
-  
   const fields = APPS.map(a=>`
     <div class="bg-white/5 border border-white/10 rounded-2xl p-6 relative hover:bg-white/10 transition-colors">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-white/10 pb-5">
@@ -480,13 +490,22 @@ function renderSidebar(){
     navHtml+=`<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${a?'bg-blue-600/90 text-white border border-blue-400/30':'text-slate-300 hover:bg-white/10 hover:text-white'}" data-nav="${n.page}"><i data-lucide="${n.ico}" class="w-4 h-4 flex-none" style="display:block"></i>${n.label}</button>`;
   }
   
-  // Đã sửa lại thành HOPNHAT HUB
+  // Render Website Thường dùng mô phỏng Font của Maaemo (nhỏ nhắn, có chân, in nghiêng, tracking rộng)
+  const quickLinksHtml = QUICK_LINKS.map(l => `<a href="${esc(l.url)}" target="_blank" class="block font-maaemo text-[11px] italic text-blue-100/60 hover:text-white transition-colors tracking-[0.1em] lowercase mb-2.5">${esc(l.name)}</a>`).join('');
+
   return `<aside class="w-64 flex-none sticky top-0 flex flex-col border-r border-white/10 bg-transparent" style="height:100vh; z-index:20;">
     <div class="px-5 py-6 border-b border-white/10">
       <div class="text-xs text-blue-200/60 font-bold uppercase tracking-widest">HNS · HỢP NHẤT</div>
       <div class="text-lg font-black text-white mt-0.5">HOPNHAT HUB</div>
     </div>
-    <nav class="flex-1 px-4 py-5 space-y-1.5 overflow-y-auto">${navHtml}</nav>
+    
+    <nav class="px-4 py-5 space-y-1.5">${navHtml}</nav>
+    
+    <div class="flex-1 overflow-y-auto px-5 mt-2">
+      <div class="text-[10px] font-bold text-blue-200/30 uppercase tracking-widest mb-3 border-b border-white/10 pb-2">Website thường dùng</div>
+      ${quickLinksHtml}
+    </div>
+
     <div class="px-5 py-5 border-t border-white/10 flex items-center gap-3 bg-white/5 backdrop-blur-md">
       <div class="w-9 h-9 rounded-xl bg-slate-900 border border-white/20 text-white flex items-center justify-center font-bold text-xs flex-none shadow-sm">${initials}</div>
       <div class="flex-1 min-w-0">
@@ -519,7 +538,6 @@ function render(){
   if(noSide){
     app.innerHTML=pg+renderModal()+toast;
   } else {
-    // Đã giữ nguyên CÔNG TY TƯ VẤN HỢP NHẤT
     app.innerHTML=`<div class="flex" style="min-height:100vh">
       ${renderSidebar()}
       <div class="flex-1 min-w-0 flex flex-col" style="min-height:100vh">
