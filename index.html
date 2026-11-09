@@ -15,7 +15,6 @@ body{font-family:"Be Vietnam Pro",system-ui,sans-serif}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .anim-spin{animation:spin .75s linear infinite}
 .anim-fadeup{animation:fadeUp .18s ease-out}
-/* Tùy chỉnh thanh cuộn cho nền tối */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
@@ -30,10 +29,10 @@ body{font-family:"Be Vietnam Pro",system-ui,sans-serif}
 //  CONFIG
 // ═══════════════════════════════════════════
 const DEFAULT_APPS=[
-  {id:'canho',   name:'HNS – Quản lý Căn hộ',  icon:'building-2', color:'#34d399', desc:'Quản lý danh sách, hợp đồng, điện nước và dịch vụ căn hộ.'},
-  {id:'hoadon',  name:'HNS – Quản lý Hóa đơn', icon:'file-text',  color:'#60a5fa', desc:'Trích xuất bảng kê hóa đơn điện tử tự động từ Tổng cục Thuế.'},
-  {id:'hkd',     name:'HNS – Quản lý HKD',      icon:'store',      color:'#fbbf24', desc:'Quản lý thu chi, bán hàng và hoạt động kinh doanh Hộ kinh doanh.'},
-  {id:'hopnhat', name:'HNS – Quản lý Hợp nhất', icon:'link-2',     color:'#f87171', desc:'Cổng thông tin, tin tức và tiện ích nội bộ dành cho nhân sự Hợp Nhất.'},
+  {id:'canho',   name:'HNS – QUẢN LÝ CĂN HỘ',  icon:'building-2', color:'#34d399', desc:'Quản lý danh sách, hợp đồng, điện nước và dịch vụ căn hộ.', url:''},
+  {id:'hoadon',  name:'HNS – QUẢN LÝ HÓA ĐƠN', icon:'file-text',  color:'#60a5fa', desc:'Trích xuất bảng kê hóa đơn điện tử tự động từ Tổng cục Thuế.', url:''},
+  {id:'hkd',     name:'HNS – QUẢN LÝ HKD',      icon:'store',      color:'#fbbf24', desc:'Quản lý thu chi, bán hàng và hoạt động kinh doanh Hộ kinh doanh.', url:''},
+  {id:'hopnhat', name:'HNS – QUẢN LÝ HỢP NHẤT', icon:'link-2',     color:'#f87171', desc:'Cổng thông tin, tin tức và tiện ích nội bộ dành cho nhân sự Hợp Nhất.', url:''},
 ];
 const INIT_USERS=[
   {id:1,name:'Hữu Hiền',  username:'hien',      role:'admin', apps:['canho','hoadon','hkd','hopnhat']},
@@ -47,18 +46,30 @@ const INIT_PW='hopnhat2024';
 const OWNER='hien';
 
 // ═══════════════════════════════════════════
-//  STORAGE
+//  STORAGE & DATA MIGRATION
 // ═══════════════════════════════════════════
-const K={u:'hub_users',p:'hub_posts',s:'hub_sess',a:'hub_apps',n:'hub_appnames',cfg:'hub_cfg'};
+const K={u:'hub_users',p:'hub_posts',s:'hub_sess',cfg:'hub_cfg',ext_apps:'hub_ext_apps'};
 const ls=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}};
 const sv=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 const rm=k=>localStorage.removeItem(k);
 
-// ═══════════════════════════════════════════
-//  HELPERS
-// ═══════════════════════════════════════════
+// Lấy danh sách ứng dụng, tự động nâng cấp dữ liệu cũ nếu có
+function getAPPS(){
+  let apps = ls(K.ext_apps);
+  if(!apps) {
+    const oldUrls = ls('hub_apps') || {};
+    const oldNames = ls('hub_appnames') || {};
+    apps = DEFAULT_APPS.map(a => ({
+      ...a, 
+      name: oldNames[a.id] || a.name, 
+      url: oldUrls[a.id] || a.url
+    }));
+    sv(K.ext_apps, apps);
+  }
+  return apps;
+}
+
 const portalName=()=>(ls(K.cfg)||{}).name||'HOPNHAT HUB';
-const getAPPS=()=>{const n=ls(K.n)||{};return DEFAULT_APPS.map(a=>({...a,name:n[a.id]||a.name}))};
 const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const $=id=>document.getElementById(id);
 const canPost=u=>u&&u.username===OWNER;
@@ -97,7 +108,6 @@ function doLogout(){rm(K.s);S.user=null;go('home')}
 //  PAGES
 // ═══════════════════════════════════════════
 function pgHome(){
-  // Bỏ style background vì body đã gánh rồi
   return `<div class="min-h-screen flex flex-col items-center justify-center cursor-pointer selection:bg-transparent" data-nav="login" title="Nhấn để đăng nhập">
     <h1 class="text-5xl md:text-7xl font-black text-white tracking-widest text-center hover:scale-105 transition-transform duration-300">HOPNHAT HUB</h1>
   </div>`;
@@ -133,18 +143,19 @@ function pgLogin(){
 }
 
 function pgDashboard(){
-  const u=S.user,APPS=getAPPS(),userApps=APPS.filter(a=>u.apps.includes(a.id)),appUrls=ls(K.a)||{};
+  const u=S.user, APPS=getAPPS(), userApps=APPS.filter(a=>u.apps.includes(a.id));
   const posts=(ls(K.p)||[]).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
   const hr=new Date().getHours(),greet=hr<12?'Chào buổi sáng':hr<18?'Chào buổi chiều':'Chào buổi tối';
   const lastName=u.name.split(' ').pop();
+  
   const appCards=userApps.length?userApps.map(a=>{
-    const url=appUrls[a.id]||'';
-    return `<a class="group bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-2xl flex flex-col gap-3 hover:bg-white/10 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer" href="${url||'#'}" ${url?'target="_blank"':'data-nourl'}>
+    return `<a class="group bg-white/5 backdrop-blur-sm border border-white/10 p-5 rounded-2xl flex flex-col gap-3 hover:bg-white/10 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer" href="${a.url||'#'}" ${a.url?'target="_blank"':'data-nourl'}>
       <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-none bg-white/10 border border-white/5"><i data-lucide="${a.icon}" class="w-6 h-6" style="color:${a.color};display:block"></i></div>
       <div class="flex-1 font-bold text-white text-sm leading-snug">${esc(a.name)}</div>
-      ${!url?`<div class="text-xs text-amber-400 flex items-center gap-1">${ic('alert-triangle','w-3 h-3')} Chưa cài URL</div>`:''}
+      ${!a.url?`<div class="text-xs text-amber-400 flex items-center gap-1">${ic('alert-triangle','w-3 h-3')} Chưa cài URL</div>`:''}
       <div class="flex justify-end text-white/30 group-hover:text-blue-400 transition-colors">${ic('arrow-up-right','w-4 h-4')}</div>
     </a>`}).join(''):`<div class="col-span-2 py-10 text-center text-white/50 flex flex-col items-center gap-2 bg-white/5 rounded-2xl border border-white/10">${ic('lock','w-9 h-9')}<p class="text-sm">Chưa được phân quyền ứng dụng.</p></div>`;
+    
   const postItems=posts.length?posts.map(p=>`
     <div class="px-6 py-4 border-b border-white/10 last:border-0 hover:bg-white/5 transition-colors">
       <div class="font-semibold text-white text-sm mb-0.5">${esc(p.title)}</div>
@@ -152,6 +163,7 @@ function pgDashboard(){
       <div class="text-sm text-slate-300 mt-1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(p.content)}</div>
     </div>`).join('')
     :`<div class="py-12 text-center text-white/50 flex flex-col items-center gap-2">${ic('inbox','w-9 h-9')}<p class="text-sm">Chưa có thông báo.</p></div>`;
+    
   return `<div class="p-8 space-y-8">
     <div>
       <h2 class="text-2xl font-black text-white">${greet}, ${esc(lastName)}! 👋</h2>
@@ -180,13 +192,10 @@ function pgDashboard(){
 }
 
 function pgApps(){
-  const u=S.user,APPS=getAPPS(),userApps=APPS.filter(a=>u.apps.includes(a.id)),appUrls=ls(K.a)||{};
+  const u=S.user, APPS=getAPPS(), userApps=APPS.filter(a=>u.apps.includes(a.id));
   if(!userApps.length)return`<div class="p-8 flex flex-col items-center justify-center py-24 text-white/50 gap-3 font-medium">${ic('lock','w-12 h-12')}<p>Bạn chưa được phân quyền ứng dụng nào.</p></div>`;
   
   const rows=userApps.map(a=>{
-    const url=appUrls[a.id]||'';
-    const origApp=DEFAULT_APPS.find(d=>d.id===a.id)||{};
-    const desc=origApp.desc||'';
     return `<tr class="hover:bg-white/5 transition-colors">
       <td class="px-6 py-5 border-b border-white/10">
         <div class="flex items-center gap-4">
@@ -197,11 +206,11 @@ function pgApps(){
         </div>
       </td>
       <td class="px-6 py-5 border-b border-white/10 text-sm text-slate-300 font-medium">
-        ${esc(desc)}
-        ${!url?`<div class="text-xs text-amber-400 mt-1.5 flex items-center gap-1.5 font-bold">${ic('alert-triangle','w-3.5 h-3.5')} Chưa cài đặt URL</div>`:''}
+        ${esc(a.desc)}
+        ${!a.url?`<div class="text-xs text-amber-400 mt-1.5 flex items-center gap-1.5 font-bold">${ic('alert-triangle','w-3.5 h-3.5')} Chưa cài đặt URL</div>`:''}
       </td>
       <td class="px-6 py-5 border-b border-white/10 text-right">
-        <a class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600/90 text-white text-sm font-bold rounded-xl hover:bg-blue-500 transition-all duration-200 hover:-translate-y-0.5 border border-blue-400/30 shadow-lg" href="${url||'#'}" ${url?'target="_blank"':'data-nourl'}>
+        <a class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600/90 text-white text-sm font-bold rounded-xl hover:bg-blue-500 transition-all duration-200 hover:-translate-y-0.5 border border-blue-400/30 shadow-lg" href="${a.url||'#'}" ${a.url?'target="_blank"':'data-nourl'}>
           Truy cập ${ic('arrow-up-right','w-4 h-4')}
         </a>
       </td>
@@ -252,7 +261,7 @@ function pgBoard(){
 }
 
 function pgAdminUsers(){
-  const users=ls(K.u)||[],APPS=getAPPS();
+  const users=ls(K.u)||[], APPS=getAPPS();
   const rows=users.map(u=>{
     const appNames=u.apps.map(id=>APPS.find(a=>a.id===id)?.name?.replace('HNS – ','')||id).join(', ')||'—';
     return `<tr class="hover:bg-white/5 transition-colors">
@@ -284,7 +293,6 @@ function pgAdminUsers(){
         <tbody>${rows}</tbody>
       </table>
     </div>
-    <div class="mt-4 bg-blue-500/20 text-blue-200 px-5 py-3 rounded-xl text-sm flex items-center gap-2 font-medium border border-blue-500/30">${ic('info','w-4 h-4 flex-none')} Mật khẩu mặc định ban đầu: <strong>${INIT_PW}</strong> — đề nghị đổi sau lần đăng nhập đầu tiên.</div>
   </div>`;
 }
 
@@ -324,41 +332,62 @@ function pgAdminPosts(){
 }
 
 function pgAdminApps(){
-  const APPS=getAPPS(),appUrls=ls(K.a)||{},appNames=ls(K.n)||{},cfg=ls(K.cfg)||{};
-  const fields=APPS.map(a=>`
-    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-200">
-      <div class="flex items-center gap-3 mb-5">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 border border-white/5"><i data-lucide="${a.icon}" class="w-5 h-5" style="color:${a.color};display:block"></i></div>
-        <span class="font-extrabold text-white">${esc(a.name)}</span>
+  const APPS=getAPPS(), cfg=ls(K.cfg)||{};
+  
+  // Từng khối thiết lập (Card) độc lập cho từng App
+  const fields = APPS.map(a=>`
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-6 relative hover:bg-white/10 transition-colors">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-white/10 pb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-white/10 border border-white/5"><i data-lucide="${a.icon}" class="w-6 h-6" style="color:${a.color};display:block"></i></div>
+          <span class="font-black text-white text-lg">${esc(a.name)}</span>
+        </div>
+        <button class="inline-flex items-center gap-1.5 text-red-400 hover:text-red-300 font-bold text-sm transition-colors" data-act="delApp" data-aid="${a.id}">${ic('trash-2','w-4 h-4')} Xóa ứng dụng</button>
       </div>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-white/60 uppercase tracking-wide mb-1.5">Tên ứng dụng</label>
-          <input class="w-full px-4 py-2.5 border border-white/10 rounded-xl text-sm bg-slate-900/60 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition" id="an-${a.id}" type="text" value="${esc(appNames[a.id]||a.name)}" placeholder="${esc(DEFAULT_APPS.find(d=>d.id===a.id)?.name||a.name)}">
-          <p class="text-xs text-blue-200/50 mt-1.5 font-medium">Để trống để dùng tên mặc định</p>
+      <div class="space-y-4 mb-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-white/60 uppercase tracking-wide mb-1.5">Tên hiển thị</label>
+            <input class="w-full px-4 py-2.5 border border-white/10 rounded-xl text-sm bg-slate-900/60 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition" id="an-${a.id}" type="text" value="${esc(a.name)}">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-white/60 uppercase tracking-wide mb-1.5">Đường dẫn URL</label>
+            <input class="w-full px-4 py-2.5 border border-white/10 rounded-xl text-sm bg-slate-900/60 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition" id="au-${a.id}" type="url" placeholder="https://..." value="${esc(a.url||'')}">
+          </div>
         </div>
         <div>
-          <label class="block text-xs font-bold text-white/60 uppercase tracking-wide mb-1.5">URL ứng dụng</label>
-          <input class="w-full px-4 py-2.5 border border-white/10 rounded-xl text-sm bg-slate-900/60 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition" id="au-${a.id}" type="url" placeholder="https://claude.ai/artifacts/…" value="${esc(appUrls[a.id]||'')}">
-          <p class="text-xs text-blue-200/50 mt-1.5 font-medium">URL artifact trên Claude · để trống nếu chưa sẵn sàng</p>
+          <label class="block text-xs font-bold text-white/60 uppercase tracking-wide mb-1.5">Mô tả tính năng</label>
+          <input class="w-full px-4 py-2.5 border border-white/10 rounded-xl text-sm bg-slate-900/60 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition" id="ad-${a.id}" type="text" value="${esc(a.desc||'')}">
         </div>
+      </div>
+      <div class="flex justify-end">
+        <button class="inline-flex items-center gap-2 bg-blue-600/90 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-500 transition-all duration-200 border border-blue-400/30 shadow-sm" data-act="saveApp" data-aid="${a.id}">${ic('save','w-4 h-4')} Lưu thay đổi</button>
       </div>
     </div>`).join('');
+
   return `<div class="p-8">
-    <div class="mb-6"><h2 class="text-2xl font-black text-white">Cài đặt ứng dụng</h2></div>
-    <div class="max-w-2xl space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-black text-white">Cài đặt ứng dụng</h2>
+        <p class="text-blue-200/70 text-sm mt-1 font-medium">Thêm, sửa, xóa cấu hình cho từng ứng dụng nội bộ.</p>
+      </div>
+      <button class="inline-flex items-center justify-center gap-2 bg-emerald-600/90 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-500 transition-all duration-200 border border-emerald-400/30 shadow-lg" data-act="addApp">${ic('plus','w-4 h-4')} Thêm ứng dụng</button>
+    </div>
+    
+    <div class="max-w-3xl space-y-6">
       <div class="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6">
-        <div class="flex items-center gap-3 mb-5">
-          <div class="w-10 h-10 rounded-xl bg-white/10 border border-white/5 flex items-center justify-center">${ic('building-2','w-5 h-5 text-white')}</div>
-          <span class="font-extrabold text-white">Thông tin cổng thông tin</span>
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-white/60 uppercase tracking-wide mb-1.5">Tên cổng thông tin</label>
-          <input class="w-full px-4 py-2.5 border border-white/10 rounded-xl text-sm bg-slate-900/60 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition" id="cfg-pname" type="text" value="${esc(cfg.name||'HOPNHAT HUB')}" placeholder="HOPNHAT HUB">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div class="flex-1">
+            <label class="block text-xs font-bold text-white/60 uppercase tracking-wide mb-1.5">Tên Cổng thông tin (Trang chủ)</label>
+            <input class="w-full px-4 py-2.5 border border-white/10 rounded-xl text-sm bg-slate-900/60 text-white placeholder-white/30 focus:outline-none focus:border-blue-400 transition" id="cfg-pname" type="text" value="${esc(cfg.name||'HOPNHAT HUB')}">
+          </div>
+          <button class="inline-flex justify-center items-center gap-2 bg-white/10 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-white/20 transition-all border border-white/10" data-act="savePortalName">${ic('save','w-4 h-4')} Lưu hệ thống</button>
         </div>
       </div>
-      ${fields}
-      <button class="inline-flex items-center gap-2 bg-blue-600/90 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-500 transition-all duration-200 border border-blue-400/30" data-act="saveAppSettings">${ic('save','w-4 h-4')} Lưu tất cả cài đặt</button>
+      
+      <div class="space-y-6">
+        ${fields}
+      </div>
     </div>
   </div>`;
 }
@@ -387,7 +416,7 @@ function renderModal(){
     </div>`;
   const btns=(okLabel,okAct,okData='')=>`
     <button class="px-5 py-2.5 rounded-xl bg-white/10 border border-white/10 font-bold text-white text-sm hover:bg-white/20 transition" data-act="closeModal">Hủy</button>
-    <button class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 transition-all duration-200" data-act="${okAct}" ${okData}>${okLabel}</button>`;
+    <button class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 transition-all duration-200 border border-blue-400/30 shadow-lg" data-act="${okAct}" ${okData}>${okLabel}</button>`;
 
   if(m.type==='user'){
     const u=m.user||{},isEdit=!!u.id;
@@ -419,8 +448,21 @@ function renderModal(){
       <div id="m-err" class="hidden bg-red-500/20 border border-red-500/30 text-red-200 px-4 py-3 rounded-xl text-sm font-bold"></div>`,
       btns('Đăng','savePost',`data-pid="${p.id||''}"`));
   }
+  if(m.type==='app'){
+    return wrap('Thêm ứng dụng mới',
+      inp('m-app-name','Tên hiển thị *','text','','HNS – ỨNG DỤNG MỚI')+
+      inp('m-app-desc','Mô tả tính năng','text','','Mô tả ngắn gọn') +
+      inp('m-app-url','Đường dẫn URL','url','','https://...') +
+      `<div class="grid grid-cols-2 gap-4">` +
+      inp('m-app-icon','Tên Icon (Lucide)','text','box','box') +
+      inp('m-app-color','Mã màu (Hex)','text','#3b82f6','#3b82f6') +
+      `</div><p class="text-xs text-blue-200/50 mt-1 mb-4">Gợi ý Icon: box, star, globe, zap, heart (xem thêm tại lucide.dev)</p>
+      <div id="m-err" class="hidden bg-red-500/20 border border-red-500/30 text-red-200 px-4 py-3 rounded-xl text-sm font-bold"></div>`,
+      btns('Thêm mới','saveNewApp')
+    );
+  }
   if(m.type==='confirm'){
-    return wrap('Xác nhận xóa',`<p class="text-sm font-medium text-white">${esc(m.msg)}</p>`,
+    return wrap('Xác nhận thao tác',`<p class="text-sm font-medium text-white">${esc(m.msg)}</p>`,
       `<button class="px-5 py-2.5 rounded-xl bg-white/10 border border-white/10 font-bold text-white text-sm hover:bg-white/20 transition" data-act="closeModal">Hủy</button>
        <button class="px-5 py-2.5 rounded-xl bg-red-500/90 text-white font-bold text-sm hover:bg-red-500 transition-all duration-200 border border-red-400/50" data-act="confirmAct">Xóa</button>`);
   }
@@ -450,7 +492,6 @@ function renderSidebar(){
     navHtml+=`<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-150 ${a?'bg-blue-600/90 text-white border border-blue-400/30':'text-slate-300 hover:bg-white/10 hover:text-white'}" data-nav="${n.page}"><i data-lucide="${n.ico}" class="w-4 h-4 flex-none" style="display:block"></i>${n.label}</button>`;
   }
   
-  // Sidebar hoàn toàn trong suốt, không đè màu nền trắng nữa
   return `<aside class="w-64 flex-none sticky top-0 flex flex-col border-r border-white/10 bg-transparent" style="height:100vh; z-index:20;">
     <div class="px-5 py-6 border-b border-white/10">
       <div class="text-xs text-blue-200/60 font-bold uppercase tracking-widest">HNS · HỢP NHẤT</div>
@@ -471,7 +512,7 @@ function renderSidebar(){
 // ═══════════════════════════════════════════
 //  RENDER
 // ═══════════════════════════════════════════
-const PAGE_TITLES={dashboard:'Dashboard',apps:'Danh mục Ứng dụng',board:'Bảng tin nội bộ','admin-users':'Quản lý người dùng','admin-posts':'Quản lý thông báo','admin-apps':'Cài đặt ứng dụng'};
+const PAGE_TITLES={dashboard:'Dashboard',apps:'Danh mục Ứng dụng',board:'Bảng tin nội bộ','admin-users':'Quản lý người dùng','admin-posts':'Quản lý thông báo','admin-apps':'Cài đặt hệ thống'};
 
 function render(){
   const app=document.getElementById('app'),noSide=!S.user||['home','login'].includes(S.page);
@@ -491,7 +532,6 @@ function render(){
   if(noSide){
     app.innerHTML=pg+renderModal()+toast;
   } else {
-    // Không cấu hình màu nền ở div con nào nữa để lấy nền Body 100%
     app.innerHTML=`<div class="flex" style="min-height:100vh">
       ${renderSidebar()}
       <div class="flex-1 min-w-0 flex flex-col" style="min-height:100vh">
@@ -528,6 +568,52 @@ function attachEvents(){
     e.preventDefault();const act=el.dataset.act;
     if(act==='logout'){doLogout();return}
     if(act==='closeModal'){S.modal=null;render();return}
+    
+    // PORTAL NAME
+    if(act==='savePortalName'){
+      const n = $('cfg-pname')?.value.trim();
+      if(n){ sv(K.cfg, {...(ls(K.cfg)||{}), name: n}); showToast('Đã cập nhật tên hệ thống.'); render(); }
+      return;
+    }
+
+    // NEW APP SETTINGS (PER APP)
+    if(act==='addApp'){ S.modal={type:'app'}; render(); return; }
+    if(act==='saveNewApp'){
+      const name = $('m-app-name')?.value.trim();
+      const desc = $('m-app-desc')?.value.trim();
+      const url = $('m-app-url')?.value.trim();
+      const icon = $('m-app-icon')?.value.trim() || 'box';
+      const color = $('m-app-color')?.value.trim() || '#3b82f6';
+      const errEl = $('m-err'), setErr=msg=>{if(errEl){errEl.textContent=msg;errEl.classList.remove('hidden')}};
+      if(!name){setErr('Vui lòng nhập tên ứng dụng.'); return;}
+      const apps = getAPPS();
+      apps.push({id: 'app_'+Date.now(), name, desc, url, icon, color});
+      sv(K.ext_apps, apps);
+      S.modal=null; render(); showToast('Đã thêm ứng dụng mới vào hệ thống.'); return;
+    }
+    if(act==='saveApp'){
+      const aid = el.dataset.aid;
+      const apps = getAPPS();
+      const idx = apps.findIndex(a=>a.id===aid);
+      if(idx>=0){
+        apps[idx].name = $(`an-${aid}`)?.value.trim() || apps[idx].name;
+        apps[idx].url = $(`au-${aid}`)?.value.trim() || '';
+        apps[idx].desc = $(`ad-${aid}`)?.value.trim() || '';
+        sv(K.ext_apps, apps);
+        showToast('Đã lưu cấu hình ứng dụng.'); render();
+      }
+      return;
+    }
+    if(act==='delApp'){
+      const aid = el.dataset.aid;
+      S.modal={type:'confirm', msg:'Bạn có chắc muốn xóa ứng dụng này khỏi hệ thống? (Các tài khoản đang được cấp quyền cũng sẽ bị gỡ bỏ ứng dụng này).', onOk:()=>{
+        const apps = getAPPS().filter(a=>a.id!==aid);
+        sv(K.ext_apps, apps);
+        S.modal = null; render(); showToast('Đã xóa ứng dụng.');
+      }};
+      render(); return;
+    }
+
     // USERS
     if(act==='addUser'){S.modal={type:'user',user:{apps:[]}};render();return}
     if(act==='editUser'){const u=(ls(K.u)||[]).find(x=>x.id==el.dataset.uid);if(u){S.modal={type:'user',user:{...u}};render()}return}
@@ -568,14 +654,6 @@ function attachEvents(){
       else posts.push({id:Date.now(),title,content,date:new Date().toISOString()});
       sv(K.p,posts);S.modal=null;render();showToast(pid?'Đã cập nhật thông báo.':'Đã đăng thông báo.');return;
     }
-    // APP SETTINGS
-    if(act==='saveAppSettings'){
-      const APPS=getAPPS(),urls={},names={};
-      APPS.forEach(a=>{const u=($(`au-${a.id}`)?.value||'').trim(),n=($(`an-${a.id}`)?.value||'').trim();urls[a.id]=u;if(n&&n!==DEFAULT_APPS.find(d=>d.id===a.id)?.name)names[a.id]=n});
-      const pNameVal=($('cfg-pname')?.value||'').trim();
-      sv(K.a,urls);sv(K.n,names);if(pNameVal)sv(K.cfg,{...((ls(K.cfg)||{})),name:pNameVal});
-      showToast('Đã lưu cài đặt ứng dụng.');render();return;
-    }
     if(act==='confirmAct'){S.modal?.onOk?.();return}
   }));
   document.getElementById('mbg')?.addEventListener('click',e=>{if(e.target.id==='mbg'){S.modal=null;render()}});
@@ -595,8 +673,6 @@ async function init(){
   }
   
   if(!ls(K.p))sv(K.p,[]);
-  if(!ls(K.a))sv(K.a,{});
-  if(!ls(K.n))sv(K.n,{});
   const sid=ls(K.s);
   if(sid){const u=(ls(K.u)||[]).find(x=>x.id===sid);if(u){S.user=u;S.page='dashboard'}}
   render();
