@@ -1,101 +1,591 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HOPNHAT CONSULTING FIRM - Giải Pháp AI & Kế Toán</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HNS – HOPNHAT HUB</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Be Vietnam Pro"','system-ui','-apple-system','sans-serif']}}}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Be Vietnam Pro",system-ui,sans-serif}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.anim-spin{animation:spin .75s linear infinite}
+.anim-fadeup{animation:fadeUp .18s ease-out}
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <span class="text-xl font-bold text-blue-600">HOPNHAT CONSULTING FIRM</span>
-            </div>
-            <nav class="hidden md:flex space-x-6 text-sm font-medium">
-                <a href="#tin-tuc" class="hover:text-blue-600">TIN TỨC</a>
-                <a href="#tu-dong-hoa" class="hover:text-blue-600">TỰ ĐỘNG HÓA KẾ TOÁN</a>
-                <a href="#quan-tri" class="hover:text-blue-600">QUẢN TRỊ TINH GỌN</a>
-            </nav>
-            <div>
-                <a href="intranet.html" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">
-                    Đăng Nhập Nội Bộ
-                </a>
-            </div>
+<body class="bg-slate-50 text-slate-900 antialiased">
+<div id="app"></div>
+<script>
+// ═══════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════
+const DEFAULT_APPS=[
+  {id:'canho',   name:'HNS – Quản lý Căn hộ',  icon:'building-2', color:'#059669'},
+  {id:'hoadon',  name:'HNS – Quản lý Hóa đơn', icon:'file-text',  color:'#2563eb'},
+  {id:'hkd',     name:'HNS – Quản lý HKD',      icon:'store',      color:'#d97706'},
+  {id:'hopnhat', name:'HNS – Quản lý Hợp nhất', icon:'link-2',     color:'#dc2626'},
+];
+const INIT_USERS=[
+  {id:1,name:'Hữu Hiền',  username:'hien',      role:'admin', apps:['canho','hoadon','hkd','hopnhat']},
+  {id:2,name:'Mỹ Tuyền',  username:'mytuyen',   role:'admin', apps:['canho','hoadon','hkd','hopnhat']},
+  {id:3,name:'Mỹ Phương', username:'myphuong',  role:'member',apps:['hoadon']},
+  {id:4,name:'Thúy La',   username:'thuyla',    role:'member',apps:['hoadon']},
+  {id:5,name:'Hiền Lương',username:'hienhluong',role:'member',apps:['hoadon']},
+  {id:6,name:'Thanh Trúc',username:'truc',      role:'member',apps:['hoadon']},
+];
+const INIT_PW='hopnhat2024';
+const OWNER='hien'; // chỉ tài khoản này được đăng/sửa/xóa tin
+
+// ═══════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════
+const K={u:'hub_users',p:'hub_posts',s:'hub_sess',a:'hub_apps',n:'hub_appnames',cfg:'hub_cfg'};
+const ls=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}};
+const sv=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const rm=k=>localStorage.removeItem(k);
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+const portalName=()=>(ls(K.cfg)||{}).name||'HOPNHAT HUB';
+const getAPPS=()=>{const n=ls(K.n)||{};return DEFAULT_APPS.map(a=>({...a,name:n[a.id]||a.name}))};
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const $=id=>document.getElementById(id);
+const canPost=u=>u&&u.username===OWNER;
+const ic=(name,cls='w-5 h-5')=>`<i data-lucide="${name}" class="${cls}" style="display:inline-block;vertical-align:middle"></i>`;
+function fmtDate(s){if(!s)return'';const d=new Date(s);if(isNaN(d))return s;return d.toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+d.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})}
+function luCreate(){if(window.lucide)lucide.createIcons();else setTimeout(()=>{if(window.lucide)lucide.createIcons()},150)}
+
+// ═══════════════════════════════════════════
+//  CRYPTO
+// ═══════════════════════════════════════════
+async function hashPw(pw){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('hnshub::'+pw));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const S={page:'home',user:null,modal:null,loginErr:null,toast:null};
+function go(page){S.page=page;S.modal=null;S.loginErr=null;render();window.scrollTo(0,0)}
+function showToast(msg,type='ok'){S.toast={msg,type};render();setTimeout(()=>{S.toast=null;render()},3200)}
+
+// ═══════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════
+async function doLogin(uname,pw){
+  const users=ls(K.u)||[];
+  const u=users.find(x=>x.username.toLowerCase()===uname.toLowerCase().trim());
+  if(!u){S.loginErr='Tên đăng nhập không tồn tại.';render();return}
+  const h=await hashPw(pw);
+  if(h!==u.pwHash){S.loginErr='Mật khẩu không đúng.';render();return}
+  sv(K.s,u.id);S.user=u;go('dashboard');
+}
+function doLogout(){rm(K.s);S.user=null;go('home')}
+
+// ═══════════════════════════════════════════
+//  PAGES
+// ═══════════════════════════════════════════
+function pgHome(){
+  const pName=portalName();
+  const posts=(ls(K.p)||[]).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+  const cards=posts.length?posts.map(p=>`
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
+      <div class="flex items-start gap-3 mb-3">
+        <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-none">${ic('megaphone','w-4 h-4 text-blue-600')}</div>
+        <div>
+          <div class="font-bold text-slate-900 leading-snug">${esc(p.title)}</div>
+          <div class="text-xs text-slate-400 mt-0.5">${fmtDate(p.date)}</div>
         </div>
-    </header>
+      </div>
+      <p class="text-sm text-slate-600 leading-relaxed" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${esc(p.content)}</p>
+    </div>`).join('')
+    :`<div class="col-span-3 flex flex-col items-center justify-center py-20 text-slate-400 gap-3">${ic('inbox','w-12 h-12')}<p class="font-medium">Chưa có thông báo nào.</p></div>`;
+  return `<div class="min-h-screen bg-white">
+    <nav class="border-b border-slate-100 px-8 py-5 flex items-center gap-4">
+      <div>
+        <div class="text-xs text-slate-400 font-bold uppercase tracking-widest">HNS · HỢP NHẤT</div>
+        <div class="text-xl font-extrabold text-slate-900 leading-tight">${esc(pName)}</div>
+      </div>
+      <span class="flex-1"></span>
+      <button class="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-700 transition-all duration-200" data-nav="login">Đăng nhập ${ic('arrow-right','w-4 h-4')}</button>
+    </nav>
+    <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white px-8 py-20 text-center">
+      <div class="inline-flex items-center gap-2 bg-white/10 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest mb-6">${ic('building-2','w-3.5 h-3.5')} CỔNG LÀM VIỆC NỘI BỘ</div>
+      <h1 class="text-4xl font-black mb-4">Trung tâm làm việc</h1>
+      <p class="text-slate-400 max-w-sm mx-auto">Ứng dụng nội bộ · Thông báo công ty · Tài nguyên dùng chung</p>
+    </div>
+    <div class="max-w-5xl mx-auto px-8 py-12">
+      <h2 class="text-xl font-extrabold text-slate-900 mb-6">Thông báo mới nhất</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${cards}</div>
+    </div>
+    <footer class="border-t border-slate-100 px-8 py-6 text-center text-slate-400 text-sm">© ${new Date().getFullYear()} HNS · Hợp Nhất. Cổng làm việc nội bộ.</footer>
+  </div>`;
+}
 
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-r from-slate-900 to-blue-900 text-white py-16">
-        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-2 gap-8 items-center">
-            <div>
-                <h1 class="text-4xl font-extrabold mb-4 leading-tight tracking-wide">Giải Pháp AI & Tự Động Hóa Doanh Nghiệp</h1>
-                <p class="text-slate-300 mb-6 font-normal">Cập nhật xu hướng công nghệ trí tuệ nhân tạo mới nhất giúp các doanh nghiệp siêu nhỏ tiết kiệm 80% thời gian xử lý số liệu và báo cáo.</p>
-                <a href="intranet.html" class="bg-white text-blue-900 font-semibold px-6 py-3 rounded-lg shadow hover:bg-slate-100 transition inline-block">Khám Phá Khu Vực Nội Bộ</a>
-            </div>
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-                <div class="text-xs text-blue-400 mb-2 font-mono">⚡ AI Automation News Update</div>
-                <h3 class="text-xl font-bold mb-2">Ứng dụng Mô hình ngôn ngữ vào việc kiểm soát hóa đơn tự động</h3>
-                <p class="text-slate-400 text-sm mb-4">Làm thế nào để tích hợp AI đọc và phân loại chứng từ kế toán đầu vào một cách chính xác...</p>
-                <a href="post-detail.html?id=1" class="text-xs text-blue-400 hover:underline font-semibold">Đọc chi tiết &rarr;</a>
-            </div>
+function pgLogin(){
+  const pName=portalName();
+  return `<div class="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center p-6">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <div class="text-xs text-white/40 font-bold uppercase tracking-widest mb-2">HNS · HỢP NHẤT</div>
+        <div class="text-2xl font-black text-white">${esc(pName)}</div>
+        <div class="text-white/50 text-sm mt-1">Cổng làm việc nội bộ</div>
+      </div>
+      <div class="bg-white rounded-2xl p-8 shadow-2xl">
+        <h2 class="text-lg font-extrabold text-slate-900 mb-6">Đăng nhập</h2>
+        ${S.loginErr?`<div class="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm mb-5 flex items-center gap-2">${ic('alert-circle','w-4 h-4 flex-none')} ${esc(S.loginErr)}</div>`:''}
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Tên đăng nhập</label>
+            <input id="lg-u" type="text" placeholder="Nhập tên đăng nhập" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Mật khẩu</label>
+            <input id="lg-p" type="password" placeholder="Nhập mật khẩu" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" autocomplete="current-password">
+          </div>
+          <button id="btn-lg" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-700 transition-all duration-200 mt-2">Đăng nhập</button>
         </div>
-    </section>
+        <div class="text-center mt-5"><a href="https://hopnhat.org" class="text-sm text-slate-400 hover:text-slate-600 transition">← Về trang chủ</a></div>
+      </div>
+    </div>
+  </div>`;
+}
 
-    <!-- Các chuyên mục bài viết -->
-    <main class="max-w-7xl mx-auto px-4 py-12 space-y-12">
-        <section id="tin-tuc">
-            <h2 class="text-2xl font-bold mb-6 border-l-4 border-blue-600 pl-3 uppercase">TIN TỨC</h2>
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">TIN TỨC MỚI</span>
-                        <h3 class="text-lg font-bold mt-2 mb-3">AI Giúp Tự Động Hóa Báo Cáo Tài Chính Như Thế Nào?</h3>
-                        <p class="text-slate-600 text-sm mb-4">Khám phá cách các công cụ AI phân tích dòng tiền và hỗ trợ lập báo cáo thuế nhanh chóng...</p>
-                    </div>
-                    <div>
-                        <a href="post-detail.html?id=2" class="text-sm font-semibold text-blue-600 hover:text-blue-800">Xem chi tiết đầy đủ &rarr;</a>
-                    </div>
-                </div>
-            </div>
-        </section>
+function pgDashboard(){
+  const u=S.user,APPS=getAPPS(),userApps=APPS.filter(a=>u.apps.includes(a.id)),appUrls=ls(K.a)||{};
+  const posts=(ls(K.p)||[]).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
+  const hr=new Date().getHours(),greet=hr<12?'Chào buổi sáng':hr<18?'Chào buổi chiều':'Chào buổi tối';
+  const lastName=u.name.split(' ').pop();
+  const appCards=userApps.length?userApps.map(a=>{
+    const url=appUrls[a.id]||'';
+    return `<a class="group bg-white rounded-2xl border border-slate-200 p-5 flex flex-col gap-3 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer" href="${url||'#'}" ${url?'target="_blank"':'data-nourl'}>
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center flex-none" style="background:${a.color}18"><i data-lucide="${a.icon}" class="w-6 h-6" style="color:${a.color};display:block"></i></div>
+      <div class="flex-1 font-bold text-slate-900 text-sm leading-snug">${esc(a.name)}</div>
+      ${!url?`<div class="text-xs text-amber-600 flex items-center gap-1">${ic('alert-triangle','w-3 h-3')} Chưa cài URL</div>`:''}
+      <div class="flex justify-end text-slate-300 group-hover:text-blue-500 transition-colors">${ic('arrow-up-right','w-4 h-4')}</div>
+    </a>`}).join(''):`<div class="col-span-2 py-10 text-center text-slate-400 flex flex-col items-center gap-2">${ic('lock','w-9 h-9')}<p class="text-sm">Chưa được phân quyền ứng dụng.</p></div>`;
+  const postItems=posts.length?posts.map(p=>`
+    <div class="px-6 py-4 border-b border-slate-100 last:border-0">
+      <div class="font-semibold text-slate-900 text-sm mb-0.5">${esc(p.title)}</div>
+      <div class="text-xs text-slate-400">${fmtDate(p.date)}</div>
+      <div class="text-sm text-slate-600 mt-1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(p.content)}</div>
+    </div>`).join('')
+    :`<div class="py-12 text-center text-slate-400 flex flex-col items-center gap-2">${ic('inbox','w-9 h-9')}<p class="text-sm">Chưa có thông báo.</p></div>`;
+  return `<div class="p-8 space-y-8">
+    <div>
+      <h2 class="text-2xl font-black text-slate-900">${greet}, ${esc(lastName)}! 👋</h2>
+      <p class="text-slate-500 mt-1 text-sm">${new Date().toLocaleDateString('vi-VN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</p>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-extrabold text-slate-900">Ứng dụng của bạn</h3>
+          ${userApps.length?`<button class="text-sm text-blue-600 hover:underline font-semibold" data-nav="apps">Xem tất cả</button>`:''}
+        </div>
+        <div class="grid grid-cols-2 gap-4">${appCards}</div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-extrabold text-slate-900">Thông báo nội bộ</h3>
+          <div class="flex items-center gap-2">
+            ${canPost(u)?`<button class="inline-flex items-center gap-1.5 bg-blue-600 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700 transition-all duration-200" data-act="addPost">${ic('plus','w-3.5 h-3.5')} Đăng tin</button>`:''}
+            ${posts.length?`<button class="text-sm text-blue-600 hover:underline font-semibold" data-nav="board">Xem tất cả</button>`:''}
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">${postItems}</div>
+      </div>
+    </div>
+  </div>`;
+}
 
-        <section id="tu-dong-hoa">
-            <h2 class="text-2xl font-bold mb-6 border-l-4 border-blue-600 pl-3 uppercase">TỰ ĐỘNG HÓA KẾ TOÁN</h2>
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">KẾ TOÁN SỐ</span>
-                        <h3 class="text-lg font-bold mt-2 mb-3">Cách AI Tối Ưu Quản Lý Dòng Tiền Cho Doanh Nghiệp Nhỏ</h3>
-                        <p class="text-slate-600 text-sm mb-4">Những giải pháp kiểm soát công nợ và dự báo tài chính hiệu quả thông qua trợ lý ảo...</p>
-                    </div>
-                    <div>
-                        <a href="post-detail.html?id=3" class="text-sm font-semibold text-blue-600 hover:text-blue-800">Xem chi tiết đầy đủ &rarr;</a>
-                    </div>
-                </div>
-            </div>
-        </section>
+function pgApps(){
+  const u=S.user,APPS=getAPPS(),userApps=APPS.filter(a=>u.apps.includes(a.id)),appUrls=ls(K.a)||{};
+  if(!userApps.length)return`<div class="p-8 flex flex-col items-center justify-center py-24 text-slate-400 gap-3">${ic('lock','w-12 h-12')}<p>Bạn chưa được phân quyền ứng dụng nào.</p></div>`;
+  const cards=userApps.map(a=>{
+    const url=appUrls[a.id]||'';
+    return `<a class="group bg-white rounded-2xl border border-slate-200 p-6 flex flex-col gap-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200" href="${url||'#'}" ${url?'target="_blank"':'data-nourl'} style="border-top:3px solid ${a.color}">
+      <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background:${a.color}18"><i data-lucide="${a.icon}" class="w-7 h-7" style="color:${a.color};display:block"></i></div>
+      <div class="flex-1">
+        <div class="font-extrabold text-slate-900 leading-snug">${esc(a.name)}</div>
+        ${!url?`<div class="text-xs text-amber-600 mt-1 flex items-center gap-1">${ic('alert-triangle','w-3 h-3')} Chưa cài đặt URL</div>`:''}
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-xs text-slate-400 font-medium">Mở ứng dụng</span>
+        <div class="w-7 h-7 rounded-lg flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 text-slate-300 transition-colors">${ic('arrow-up-right','w-4 h-4')}</div>
+      </div>
+    </a>`}).join('');
+  return `<div class="p-8">
+    <div class="mb-6"><h2 class="text-xl font-extrabold text-slate-900">Ứng dụng của bạn</h2><p class="text-slate-500 text-sm mt-1">Nhấp vào ứng dụng để mở trong tab mới.</p></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">${cards}</div>
+  </div>`;
+}
 
-        <section id="quan-tri">
-            <h2 class="text-2xl font-bold mb-6 border-l-4 border-blue-600 pl-3 uppercase">QUẢN TRỊ TINH GỌN</h2>
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                    <div>
-                        <span class="text-xs text-blue-600 font-semibold uppercase tracking-wider">QUẢN TRỊ</span>
-                        <h3 class="text-lg font-bold mt-2 mb-3">AI trong Kế Toán: Tương Lai Của Doanh Nghiệp Siêu Nhỏ</h3>
-                        <p class="text-slate-600 text-sm mb-4">Góc nhìn chiến lược cho các nhà quản lý khi chuyển đổi số quy trình kế toán nội bộ...</p>
-                    </div>
-                    <div>
-                        <a href="post-detail.html?id=4" class="text-sm font-semibold text-blue-600 hover:text-blue-800">Xem chi tiết đầy đủ &rarr;</a>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+function pgBoard(){
+  const u=S.user;
+  const posts=(ls(K.p)||[]).sort((a,b)=>b.date.localeCompare(a.date));
+  const items=posts.length?posts.map(p=>`
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-none">${ic('megaphone','w-5 h-5 text-blue-600')}</div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-slate-900">${esc(p.title)}</div>
+          <div class="text-xs text-slate-400 mt-0.5">${fmtDate(p.date)}</div>
+          <div class="text-sm text-slate-600 mt-3 leading-relaxed whitespace-pre-wrap">${esc(p.content)}</div>
+        </div>
+      </div>
+    </div>`).join('')
+    :`<div class="flex flex-col items-center justify-center py-24 text-slate-400 gap-3">${ic('inbox','w-14 h-14')}<p class="font-medium">Chưa có thông báo nào.</p></div>`;
+  return `<div class="p-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-extrabold text-slate-900">Bảng tin nội bộ</h2>
+      ${canPost(u)?`<button class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 transition-all duration-200 hover:-translate-y-0.5" data-act="addPost">${ic('plus','w-4 h-4')} Đăng tin mới</button>`:''}
+    </div>
+    <div class="space-y-4">${items}</div>
+  </div>`;
+}
 
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-sm text-slate-500">
-        &copy; 2026 HOPNHAT CONSULTING FIRM. All rights reserved.
-    </footer>
+function pgAdminUsers(){
+  const users=ls(K.u)||[],APPS=getAPPS();
+  const rows=users.map(u=>{
+    const appNames=u.apps.map(id=>APPS.find(a=>a.id===id)?.name?.replace('HNS – ','')||id).join(', ')||'—';
+    return `<tr class="hover:bg-slate-50 transition-colors">
+      <td class="px-6 py-4 font-semibold text-slate-900">${esc(u.name)}</td>
+      <td class="px-6 py-4"><code class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs font-mono">${esc(u.username)}</code></td>
+      <td class="px-6 py-4"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${u.role==='admin'?'bg-blue-50 text-blue-700':'bg-emerald-50 text-emerald-700'}">${u.role==='admin'?'Quản trị viên':'Thành viên'}</span></td>
+      <td class="px-6 py-4 text-sm text-slate-500">${esc(appNames)}</td>
+      <td class="px-6 py-4">
+        <div class="flex items-center gap-2">
+          <button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold hover:bg-slate-50 transition-all duration-200" data-act="editUser" data-uid="${u.id}">${ic('pencil','w-3 h-3')} Sửa</button>
+          ${u.id!==S.user.id?`<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-100 text-red-600 bg-red-50 text-xs font-semibold hover:bg-red-100 transition-all duration-200" data-act="delUser" data-uid="${u.id}">${ic('trash-2','w-3 h-3')} Xóa</button>`:''}
+        </div>
+      </td>
+    </tr>`}).join('');
+  return `<div class="p-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-extrabold text-slate-900">Quản lý người dùng</h2>
+      <button class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 transition-all duration-200 hover:-translate-y-0.5" data-act="addUser">${ic('user-plus','w-4 h-4')} Thêm người dùng</button>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <table class="w-full">
+        <thead><tr class="border-b border-slate-100 bg-slate-50">
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Họ tên</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Đăng nhập</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Vai trò</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Ứng dụng</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Thao tác</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="mt-4 bg-blue-50 text-blue-700 px-5 py-3 rounded-xl text-sm flex items-center gap-2">${ic('info','w-4 h-4 flex-none')} Mật khẩu mặc định ban đầu: <strong>${INIT_PW}</strong> — đề nghị đổi sau lần đăng nhập đầu tiên.</div>
+  </div>`;
+}
+
+function pgAdminPosts(){
+  const posts=(ls(K.p)||[]).sort((a,b)=>b.date.localeCompare(a.date));
+  const rows=posts.length?posts.map(p=>`
+    <tr class="hover:bg-slate-50 transition-colors">
+      <td class="px-6 py-4 font-semibold text-slate-900">${esc(p.title)}</td>
+      <td class="px-6 py-4 text-sm text-slate-500 whitespace-nowrap">${fmtDate(p.date)}</td>
+      <td class="px-6 py-4 text-sm text-slate-600 max-w-xs" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.content)}</td>
+      <td class="px-6 py-4">
+        <div class="flex items-center gap-2">
+          ${canPost(S.user)?`<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold hover:bg-slate-50 transition-all duration-200" data-act="editPost" data-pid="${p.id}">${ic('pencil','w-3 h-3')} Sửa</button>`:''}
+          ${canPost(S.user)?`<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-100 text-red-600 bg-red-50 text-xs font-semibold hover:bg-red-100 transition-all duration-200" data-act="delPost" data-pid="${p.id}">${ic('trash-2','w-3 h-3')} Xóa</button>`:''}
+        </div>
+      </td>
+    </tr>`).join('')
+    :`<tr><td colspan="4" class="px-6 py-16 text-center text-slate-400"><div class="flex flex-col items-center gap-3">${ic('inbox','w-10 h-10')}<p>Chưa có bài đăng nào.</p></div></td></tr>`;
+  return `<div class="p-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xl font-extrabold text-slate-900">Quản lý thông báo</h2>
+      ${canPost(S.user)?`<button class="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-blue-700 transition-all duration-200 hover:-translate-y-0.5" data-act="addPost">${ic('plus','w-4 h-4')} Đăng thông báo mới</button>`:''}
+    </div>
+    ${!canPost(S.user)?`<div class="bg-amber-50 text-amber-700 px-5 py-3 rounded-xl text-sm flex items-center gap-2 mb-6">${ic('lock','w-4 h-4 flex-none')} Chỉ người sở hữu hệ thống mới có quyền đăng/sửa/xóa tin.</div>`:''}
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <table class="w-full">
+        <thead><tr class="border-b border-slate-100 bg-slate-50">
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Tiêu đề</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Ngày đăng</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Nội dung</th>
+          <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Thao tác</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function pgAdminApps(){
+  const APPS=getAPPS(),appUrls=ls(K.a)||{},appNames=ls(K.n)||{},cfg=ls(K.cfg)||{};
+  const fields=APPS.map(a=>`
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-sm transition-all duration-200">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:${a.color}15"><i data-lucide="${a.icon}" class="w-5 h-5" style="color:${a.color};display:block"></i></div>
+        <span class="font-extrabold text-slate-900">${esc(a.name)}</span>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Tên ứng dụng</label>
+          <input class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" id="an-${a.id}" type="text" value="${esc(appNames[a.id]||a.name)}" placeholder="${esc(DEFAULT_APPS.find(d=>d.id===a.id)?.name||a.name)}">
+          <p class="text-xs text-slate-400 mt-1">Để trống để dùng tên mặc định</p>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">URL ứng dụng</label>
+          <input class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" id="au-${a.id}" type="url" placeholder="https://claude.ai/artifacts/…" value="${esc(appUrls[a.id]||'')}">
+          <p class="text-xs text-slate-400 mt-1">URL artifact trên Claude · để trống nếu chưa sẵn sàng</p>
+        </div>
+      </div>
+    </div>`).join('');
+  return `<div class="p-8">
+    <div class="mb-6"><h2 class="text-xl font-extrabold text-slate-900">Cài đặt ứng dụng</h2></div>
+    <div class="max-w-2xl space-y-5">
+      <div class="bg-white rounded-2xl border border-slate-200 p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">${ic('building-2','w-5 h-5 text-slate-600')}</div>
+          <span class="font-extrabold text-slate-900">Thông tin cổng thông tin</span>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Tên cổng thông tin</label>
+          <input class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" id="cfg-pname" type="text" value="${esc(cfg.name||'HOPNHAT HUB')}" placeholder="HOPNHAT HUB">
+        </div>
+      </div>
+      ${fields}
+      <button class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all duration-200 hover:-translate-y-0.5" data-act="saveAppSettings">${ic('save','w-4 h-4')} Lưu tất cả cài đặt</button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════
+function renderModal(){
+  const m=S.modal;if(!m)return'';
+  const APPS=getAPPS();
+  const wrap=(title,body,footer)=>`
+    <div class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 anim-fadeup" id="mbg">
+      <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl" style="max-height:92vh;overflow-y:auto">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 class="font-extrabold text-slate-900">${title}</h3>
+          <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-500 transition" data-act="closeModal">${ic('x','w-4 h-4')}</button>
+        </div>
+        <div class="px-6 py-5">${body}</div>
+        <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">${footer}</div>
+      </div>
+    </div>`;
+  const inp=(id,label,type='text',val='',ph='',extra='')=>`
+    <div class="mb-4">
+      <label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">${label}</label>
+      <input class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" id="${id}" type="${type}" value="${val}" placeholder="${ph}" ${extra}>
+    </div>`;
+  const btns=(okLabel,okAct,okData='')=>`
+    <button class="px-5 py-2.5 rounded-xl border border-slate-200 font-semibold text-sm hover:bg-slate-50 transition" data-act="closeModal">Hủy</button>
+    <button class="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 transition-all duration-200" data-act="${okAct}" ${okData}>${okLabel}</button>`;
+
+  if(m.type==='user'){
+    const u=m.user||{},isEdit=!!u.id;
+    const checks=APPS.map(a=>`
+      <label class="flex items-center gap-2.5 px-3 py-2.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+        <input type="checkbox" name="ap" value="${a.id}" ${(u.apps||[]).includes(a.id)?'checked':''} class="accent-blue-600">
+        <i data-lucide="${a.icon}" class="w-4 h-4 flex-none" style="color:${a.color};display:block"></i>
+        <span class="text-sm font-medium text-slate-700">${esc(a.name.replace('HNS – ',''))}</span>
+      </label>`).join('');
+    return wrap(isEdit?'Sửa người dùng':'Thêm người dùng',
+      inp('m-name','Họ và tên *','text',esc(u.name||''),'Nguyễn Văn A')+
+      inp('m-uname','Tên đăng nhập *','text',esc(u.username||''),'username','autocapitalize="none" autocorrect="off" spellcheck="false"')+
+      inp('m-pw',isEdit?'Mật khẩu mới (để trống = không đổi)':'Mật khẩu *','password','',isEdit?'Để trống nếu không muốn đổi':'Nhập mật khẩu')+
+      `<div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Vai trò</label>
+        <select class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 transition" id="m-role">
+          <option value="member" ${(u.role||'member')==='member'?'selected':''}>Thành viên</option>
+          <option value="admin" ${u.role==='admin'?'selected':''}>Quản trị viên</option>
+        </select></div>
+      <div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Phân quyền ứng dụng</label><div class="grid grid-cols-2 gap-2">${checks}</div></div>
+      <div id="m-err" class="hidden bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm"></div>`,
+      btns('Lưu','saveUser',`data-uid="${u.id||''}"`));
+  }
+  if(m.type==='post'){
+    const p=m.post||{},isEdit=!!p.id;
+    return wrap(isEdit?'Sửa thông báo':'Đăng thông báo mới',
+      inp('m-title','Tiêu đề *','text',esc(p.title||''),'Nhập tiêu đề thông báo')+
+      `<div class="mb-4"><label class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Nội dung *</label>
+        <textarea class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition resize-y" id="m-content" placeholder="Nhập nội dung thông báo…" style="min-height:8rem">${esc(p.content||'')}</textarea></div>
+      <div id="m-err" class="hidden bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm"></div>`,
+      btns('Đăng','savePost',`data-pid="${p.id||''}"`));
+  }
+  if(m.type==='confirm'){
+    return wrap('Xác nhận xóa',`<p class="text-sm text-slate-700">${esc(m.msg)}</p>`,
+      `<button class="px-5 py-2.5 rounded-xl border border-slate-200 font-semibold text-sm hover:bg-slate-50 transition" data-act="closeModal">Hủy</button>
+       <button class="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-all duration-200" data-act="confirmAct">Xóa</button>`);
+  }
+  return'';
+}
+
+// ═══════════════════════════════════════════
+//  SIDEBAR
+// ═══════════════════════════════════════════
+function renderSidebar(){
+  const u=S.user;if(!u)return'';
+  const isAdmin=u.role==='admin',initials=u.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  const navItems=[
+    {page:'dashboard',ico:'home',label:'Dashboard'},
+    {page:'apps',ico:'layout-grid',label:'Ứng dụng'},
+    {page:'board',ico:'megaphone',label:'Bảng tin nội bộ'},
+  ];
+  if(isAdmin)navItems.push(
+    {page:'admin-users',ico:'users',label:'Người dùng',sec:'Quản trị'},
+    {page:'admin-posts',ico:'file-text',label:'Quản lý thông báo'},
+    {page:'admin-apps',ico:'settings',label:'Cài đặt ứng dụng'},
+  );
+  let navHtml='',lastSec='';
+  for(const n of navItems){
+    if(n.sec&&n.sec!==lastSec){navHtml+=`<div class="px-3 py-2 mt-2 text-xs font-bold text-slate-400 uppercase tracking-widest">${n.sec}</div>`;lastSec=n.sec}
+    const a=S.page===n.page;
+    navHtml+=`<button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 ${a?'bg-blue-600 text-white shadow-sm':'text-slate-600 hover:bg-slate-100'}" data-nav="${n.page}"><i data-lucide="${n.ico}" class="w-4 h-4 flex-none" style="display:block"></i>${n.label}</button>`;
+  }
+  return `<aside class="w-60 flex-none sticky top-0 flex flex-col bg-white border-r border-slate-200" style="height:100vh">
+    <div class="px-5 py-5 border-b border-slate-100">
+      <div class="text-xs text-slate-400 font-bold uppercase tracking-widest">HNS · HỢP NHẤT</div>
+      <div class="text-lg font-extrabold text-slate-900 mt-0.5">${esc(portalName())}</div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">${navHtml}</nav>
+    <div class="px-4 py-4 border-t border-slate-100 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs flex-none">${initials}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-bold text-slate-900 truncate">${esc(u.name)}</div>
+        <div class="text-xs text-slate-400">${isAdmin?'Quản trị viên':'Thành viên'}</div>
+      </div>
+      <button class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition" title="Đăng xuất" data-act="logout">${ic('log-out','w-4 h-4')}</button>
+    </div>
+  </aside>`;
+}
+
+// ═══════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════
+const PAGE_TITLES={dashboard:'Dashboard',apps:'Ứng dụng',board:'Bảng tin nội bộ','admin-users':'Quản lý người dùng','admin-posts':'Quản lý thông báo','admin-apps':'Cài đặt ứng dụng'};
+
+function render(){
+  const app=document.getElementById('app'),noSide=!S.user||['home','login'].includes(S.page);
+  let pg='';
+  if(S.page==='home')pg=pgHome();
+  else if(S.page==='login')pg=pgLogin();
+  else if(!S.user){go('login');return}
+  else if(S.page==='dashboard')pg=pgDashboard();
+  else if(S.page==='apps')pg=pgApps();
+  else if(S.page==='board')pg=pgBoard();
+  else if(S.page==='admin-users'&&S.user.role==='admin')pg=pgAdminUsers();
+  else if(S.page==='admin-posts'&&S.user.role==='admin')pg=pgAdminPosts();
+  else if(S.page==='admin-apps'&&S.user.role==='admin')pg=pgAdminApps();
+  else{go('dashboard');return}
+  const toast=S.toast?`<div class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl font-bold text-sm shadow-lg anim-fadeup border ${S.toast.type==='ok'?'bg-emerald-50 text-emerald-700 border-emerald-200':'bg-red-50 text-red-700 border-red-200'}">${esc(S.toast.msg)}</div>`:'';
+  if(noSide){
+    app.innerHTML=pg+renderModal()+toast;
+  } else {
+    app.innerHTML=`<div class="flex" style="min-height:100vh">
+      ${renderSidebar()}
+      <div class="flex-1 min-w-0 flex flex-col" style="min-height:100vh">
+        <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center gap-4 sticky top-0 z-10">
+          <h1 class="text-lg font-extrabold text-slate-900 flex-1">${PAGE_TITLES[S.page]||''}</h1>
+          ${S.user?.role==='admin'?`<span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">${ic('shield','w-3 h-3')} Admin</span>`:''}
+        </header>
+        <main class="flex-1 bg-slate-50">${pg}</main>
+      </div>
+    </div>${renderModal()}${toast}`;
+  }
+  attachEvents();
+  luCreate();
+}
+
+// ═══════════════════════════════════════════
+//  EVENTS
+// ═══════════════════════════════════════════
+function attachEvents(){
+  document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();go(el.dataset.nav)}));
+  const btnLg=$('btn-lg');
+  if(btnLg){
+    const doLg=()=>doLogin($('lg-u').value,$('lg-p').value);
+    btnLg.addEventListener('click',doLg);
+    $('lg-p')?.addEventListener('keydown',e=>{if(e.key==='Enter')doLg()});
+    $('lg-u')?.addEventListener('keydown',e=>{if(e.key==='Enter')$('lg-p').focus()});
+  }
+  document.querySelectorAll('[data-nourl]').forEach(el=>el.addEventListener('click',e=>{
+    e.preventDefault();
+    if(S.user?.role==='admin'){go('admin-apps');showToast('Vui lòng cài đặt URL cho ứng dụng này.','err')}
+    else showToast('Ứng dụng này chưa sẵn sàng. Liên hệ quản trị viên.','err');
+  }));
+  document.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click',async e=>{
+    e.preventDefault();const act=el.dataset.act;
+    if(act==='logout'){doLogout();return}
+    if(act==='closeModal'){S.modal=null;render();return}
+    // USERS
+    if(act==='addUser'){S.modal={type:'user',user:{apps:[]}};render();return}
+    if(act==='editUser'){const u=(ls(K.u)||[]).find(x=>x.id==el.dataset.uid);if(u){S.modal={type:'user',user:{...u}};render()}return}
+    if(act==='delUser'){
+      const uid=parseInt(el.dataset.uid);
+      S.modal={type:'confirm',msg:'Bạn có chắc muốn xóa người dùng này?',onOk:()=>{sv(K.u,(ls(K.u)||[]).filter(u=>u.id!==uid));S.modal=null;render();showToast('Đã xóa người dùng.')}};
+      render();return;
+    }
+    if(act==='saveUser'){
+      const name=$('m-name')?.value.trim(),uname=$('m-uname')?.value.trim().toLowerCase(),pw=$('m-pw')?.value,role=$('m-role')?.value||'member';
+      const apps=[...document.querySelectorAll('input[name="ap"]:checked')].map(x=>x.value);
+      const uid=el.dataset.uid?parseInt(el.dataset.uid):null;
+      const errEl=$('m-err'),setErr=msg=>{if(errEl){errEl.textContent=msg;errEl.classList.remove('hidden')}};
+      if(!name||!uname){setErr('Vui lòng điền đầy đủ họ tên và tên đăng nhập.');return}
+      if(!uid&&!pw){setErr('Vui lòng nhập mật khẩu.');return}
+      const users=ls(K.u)||[];
+      if(users.find(u=>u.username===uname&&u.id!==uid)){setErr('Tên đăng nhập đã tồn tại.');return}
+      if(uid){const idx=users.findIndex(u=>u.id===uid);if(idx>=0){users[idx]={...users[idx],name,username:uname,role,apps};if(pw)users[idx].pwHash=await hashPw(pw);if(uid===S.user.id)S.user=users[idx]}}
+      else users.push({id:Date.now(),name,username:uname,role,apps,pwHash:await hashPw(pw)});
+      sv(K.u,users);S.modal=null;go('admin-users');showToast(uid?'Đã cập nhật người dùng.':'Đã thêm người dùng.');return;
+    }
+    // POSTS
+    if(act==='addPost'){if(!canPost(S.user)){showToast('Bạn không có quyền đăng tin.','err');return}S.modal={type:'post',post:{}};render();return}
+    if(act==='editPost'){if(!canPost(S.user)){showToast('Bạn không có quyền sửa tin.','err');return}const p=(ls(K.p)||[]).find(x=>x.id==el.dataset.pid);if(p){S.modal={type:'post',post:{...p}};render()}return}
+    if(act==='delPost'){
+      if(!canPost(S.user)){showToast('Bạn không có quyền xóa tin.','err');return}
+      const pid=parseInt(el.dataset.pid);
+      S.modal={type:'confirm',msg:'Bạn có chắc muốn xóa thông báo này?',onOk:()=>{sv(K.p,(ls(K.p)||[]).filter(p=>p.id!==pid));S.modal=null;render();showToast('Đã xóa thông báo.')}};
+      render();return;
+    }
+    if(act==='savePost'){
+      if(!canPost(S.user)){showToast('Bạn không có quyền đăng tin.','err');return}
+      const title=$('m-title')?.value.trim(),content=$('m-content')?.value.trim(),pid=el.dataset.pid||null;
+      const errEl=$('m-err');
+      if(!title||!content){if(errEl){errEl.textContent='Vui lòng điền đầy đủ tiêu đề và nội dung.';errEl.classList.remove('hidden')}return}
+      const posts=ls(K.p)||[];
+      if(pid){const idx=posts.findIndex(p=>p.id==pid);if(idx>=0)posts[idx]={...posts[idx],title,content,updatedAt:new Date().toISOString()}}
+      else posts.push({id:Date.now(),title,content,date:new Date().toISOString()});
+      sv(K.p,posts);S.modal=null;render();showToast(pid?'Đã cập nhật thông báo.':'Đã đăng thông báo.');return;
+    }
+    // APP SETTINGS
+    if(act==='saveAppSettings'){
+      const APPS=getAPPS(),urls={},names={};
+      APPS.forEach(a=>{const u=($(`au-${a.id}`)?.value||'').trim(),n=($(`an-${a.id}`)?.value||'').trim();urls[a.id]=u;if(n&&n!==DEFAULT_APPS.find(d=>d.id===a.id)?.name)names[a.id]=n});
+      const pNameVal=($('cfg-pname')?.value||'').trim();
+      sv(K.a,urls);sv(K.n,names);if(pNameVal)sv(K.cfg,{...((ls(K.cfg)||{})),name:pNameVal});
+      showToast('Đã lưu cài đặt ứng dụng.');render();return;
+    }
+    if(act==='confirmAct'){S.modal?.onOk?.();return}
+  }));
+  document.getElementById('mbg')?.addEventListener('click',e=>{if(e.target.id==='mbg'){S.modal=null;render()}});
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+async function init(){
+  if(!ls(K.u)){const h=await hashPw(INIT_PW);sv(K.u,INIT_USERS.map(u=>({...u,pwHash:h})))}
+  if(!ls(K.p))sv(K.p,[]);
+  if(!ls(K.a))sv(K.a,{});
+  if(!ls(K.n))sv(K.n,{});
+  const sid=ls(K.s);
+  if(sid){const u=(ls(K.u)||[]).find(x=>x.id===sid);if(u){S.user=u;S.page='dashboard'}}
+  render();
+}
+init();
+</script>
 </body>
 </html>
