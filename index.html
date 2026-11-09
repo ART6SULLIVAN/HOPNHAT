@@ -21,7 +21,6 @@ body{font-family:"Be Vietnam Pro",system-ui,sans-serif}
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
 </style>
 </head>
-<!-- NỀN GLOBAL CHO TOÀN BỘ TRANG WEB -->
 <body class="text-white antialiased min-h-screen" style="background: linear-gradient(to bottom right, #0f172a, #1e3a8a);">
 <div id="app"></div>
 <script>
@@ -34,26 +33,27 @@ const DEFAULT_APPS=[
   {id:'hkd',     name:'HNS – QUẢN LÝ HKD',      icon:'store',      color:'#fbbf24', desc:'Quản lý thu chi, bán hàng và hoạt động kinh doanh Hộ kinh doanh.', url:''},
   {id:'hopnhat', name:'HNS – QUẢN LÝ HỢP NHẤT', icon:'link-2',     color:'#f87171', desc:'Cổng thông tin, tin tức và tiện ích nội bộ dành cho nhân sự Hợp Nhất.', url:''},
 ];
+
+// Danh sách tài khoản mặc định và mật khẩu
 const INIT_USERS=[
-  {id:1,name:'Hữu Hiền',  username:'hien',      role:'admin', apps:['canho','hoadon','hkd','hopnhat']},
-  {id:2,name:'Mỹ Tuyền',  username:'mytuyen',   role:'admin', apps:['canho','hoadon','hkd','hopnhat']},
-  {id:3,name:'Mỹ Phương', username:'myphuong',  role:'member',apps:['hoadon']},
-  {id:4,name:'Thúy La',   username:'thuyla',    role:'member',apps:['hoadon']},
-  {id:5,name:'Hiền Lương',username:'hienhluong',role:'member',apps:['hoadon']},
-  {id:6,name:'Thanh Trúc',username:'truc',      role:'member',apps:['hoadon']},
+  {id:1, name:'Hữu Hiền',   username:'hien',                       role:'admin',  apps:['canho','hoadon','hkd','hopnhat'], initPw:'hopnhat2024'},
+  {id:2, name:'Mỹ Tuyền',   username:'mytuyen.hopnhat@gmail.com',  role:'admin',  apps:['canho','hoadon','hkd','hopnhat'], initPw:'123@Canthan'},
+  {id:3, name:'Hiền Lương', username:'lthluong.hopnhat@gmail.com', role:'member', apps:['hoadon'],                         initPw:'123@Canthan'},
+  {id:4, name:'Thanh Trúc', username:'truc.hopnhat@gmail.com',     role:'member', apps:['hoadon'],                         initPw:'123@Canthan'},
+  {id:5, name:'Mỹ Phương',  username:'myphuong.hopnhat@gmail.com', role:'member', apps:['hoadon'],                         initPw:'123@Canthan'},
+  {id:6, name:'Thúy La',    username:'thuyla.hopnhat@gmail.com',   role:'member', apps:['hoadon'],                         initPw:'123@Canthan'},
 ];
-const INIT_PW='hopnhat2024';
+
 const OWNER='hien';
 
 // ═══════════════════════════════════════════
-//  STORAGE & DATA MIGRATION
+//  STORAGE & DATA MIGRATION (Nâng cấp DB lên v2 để ép reset tài khoản)
 // ═══════════════════════════════════════════
-const K={u:'hub_users',p:'hub_posts',s:'hub_sess',cfg:'hub_cfg',ext_apps:'hub_ext_apps'};
+const K={u:'hub_users_v2', p:'hub_posts', s:'hub_sess_v2', cfg:'hub_cfg', ext_apps:'hub_ext_apps'};
 const ls=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}};
 const sv=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 const rm=k=>localStorage.removeItem(k);
 
-// Lấy danh sách ứng dụng, tự động nâng cấp dữ liệu cũ nếu có
 function getAPPS(){
   let apps = ls(K.ext_apps);
   if(!apps) {
@@ -293,6 +293,7 @@ function pgAdminUsers(){
         <tbody>${rows}</tbody>
       </table>
     </div>
+    <div class="mt-4 bg-blue-500/20 text-blue-200 px-5 py-3 rounded-xl text-sm flex items-center gap-2 font-medium border border-blue-500/30">${ic('info','w-4 h-4 flex-none')} Mật khẩu nhân viên: <strong>123@Canthan</strong> | Mật khẩu Admin: <strong>hopnhat2024</strong></div>
   </div>`;
 }
 
@@ -334,7 +335,6 @@ function pgAdminPosts(){
 function pgAdminApps(){
   const APPS=getAPPS(), cfg=ls(K.cfg)||{};
   
-  // Từng khối thiết lập (Card) độc lập cho từng App
   const fields = APPS.map(a=>`
     <div class="bg-white/5 border border-white/10 rounded-2xl p-6 relative hover:bg-white/10 transition-colors">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-white/10 pb-5">
@@ -483,7 +483,7 @@ function renderSidebar(){
   if(isAdmin)navItems.push(
     {page:'admin-users',ico:'users',label:'Người dùng',sec:'Quản trị'},
     {page:'admin-posts',ico:'file-text',label:'Quản lý thông báo'},
-    {page:'admin-apps',ico:'settings',label:'Cài đặt ứng dụng'},
+    {page:'admin-apps',ico:'settings',label:'Cài đặt hệ thống'},
   );
   let navHtml='',lastSec='';
   for(const n of navItems){
@@ -665,8 +665,12 @@ function attachEvents(){
 async function init(){
   try {
     if(!ls(K.u) || ls(K.u).length === 0){
-      const h=await hashPw(INIT_PW);
-      sv(K.u,INIT_USERS.map(u=>({...u,pwHash:h})));
+      const initializedUsers = [];
+      for (let user of INIT_USERS) {
+        const h = await hashPw(user.initPw);
+        initializedUsers.push({...user, pwHash: h});
+      }
+      sv(K.u, initializedUsers);
     }
   } catch(e) {
     console.error("Lỗi khởi tạo:", e);
